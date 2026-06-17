@@ -3,6 +3,10 @@ import type { QueueBaseOptions } from "bullmq";
 import fs from "fs";
 import { env } from "../../env";
 import { logger } from "../logger";
+import {
+  bindManagedCredentialToRedis,
+  getRedisManagedCredentialProviderFromEnv,
+} from "../auth/credentials/redisCredentials";
 
 const defaultRedisOptions: Partial<RedisOptions> = {
   enableReadyCheck: true,
@@ -209,23 +213,46 @@ export const createNewRedisInstance = (
 
   const tlsOptions = buildTlsOptions();
 
+  // null unless an opt-in short-lived credential method is configured.
+  const managedCredentialProvider = getRedisManagedCredentialProviderFromEnv();
+  const lazyConnectOptions = managedCredentialProvider
+    ? { lazyConnect: true }
+    : {};
+
   const instance = env.REDIS_CONNECTION_STRING
     ? new Redis(env.REDIS_CONNECTION_STRING, {
         ...defaultRedisOptions,
         ...additionalOptions,
         ...tlsOptions,
+        ...lazyConnectOptions,
       })
     : env.REDIS_HOST
       ? new Redis({
           host: String(env.REDIS_HOST),
           port: Number(env.REDIS_PORT),
-          username: env.REDIS_USERNAME || undefined,
-          password: String(env.REDIS_AUTH),
+          username: managedCredentialProvider
+            ? managedCredentialProvider.username
+            : env.REDIS_USERNAME || undefined,
+          password: managedCredentialProvider
+            ? undefined
+            : String(env.REDIS_AUTH),
           ...defaultRedisOptions,
           ...additionalOptions,
           ...tlsOptions,
+          ...lazyConnectOptions,
         })
       : null;
+
+  if (instance && managedCredentialProvider) {
+    // Async so the synchronous factory contract is preserved.
+    bindManagedCredentialToRedis(instance, managedCredentialProvider).catch(
+      (error) =>
+        logger.error(
+          "Failed to initialize Redis short-lived credentials",
+          error,
+        ),
+    );
+  }
 
   instance?.on("error", (error) => {
     logger.error("Redis error", error);
