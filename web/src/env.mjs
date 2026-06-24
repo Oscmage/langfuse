@@ -335,6 +335,7 @@ export const env = createEnv({
     LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: z.string().default(""),
     LANGFUSE_S3_MEDIA_UPLOAD_REGION: z.string().optional(),
     LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: z.string().optional(),
+    LANGFUSE_S3_MEDIA_UPLOAD_EXTERNAL_ENDPOINT: z.string().optional(),
     LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: z.string().optional(),
     LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: z.string().optional(),
     LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: z
@@ -440,6 +441,11 @@ export const env = createEnv({
     LANGFUSE_MIGRATION_V4_WRITE_MODE: z
       .enum(["legacy", "dual", "events_only"])
       .default("legacy"),
+
+    // Temporary kill-switch for the observations v2 subquery-IN rewrite.
+    LANGFUSE_OBSERVATIONS_V2_SUBQUERY_REWRITE: z
+      .enum(["true", "false"])
+      .default("false"),
 
     // Blocked users for chat completion API (userId:reason format)
     LANGFUSE_BLOCKED_USERIDS_CHATCOMPLETION: z
@@ -731,6 +737,8 @@ export const env = createEnv({
       process.env.LANGFUSE_S3_MEDIA_UPLOAD_REGION,
     LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT:
       process.env.LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT,
+    LANGFUSE_S3_MEDIA_UPLOAD_EXTERNAL_ENDPOINT:
+      process.env.LANGFUSE_S3_MEDIA_UPLOAD_EXTERNAL_ENDPOINT,
     LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID:
       process.env.LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID,
     LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY:
@@ -851,6 +859,8 @@ export const env = createEnv({
     // Legacy tracing search controls
     LANGFUSE_DISABLE_LEGACY_TRACING_IO_SEARCH:
       process.env.LANGFUSE_DISABLE_LEGACY_TRACING_IO_SEARCH,
+    LANGFUSE_OBSERVATIONS_V2_SUBQUERY_REWRITE:
+      process.env.LANGFUSE_OBSERVATIONS_V2_SUBQUERY_REWRITE,
     LANGFUSE_BLOCKED_USERIDS_CHATCOMPLETION:
       process.env.LANGFUSE_BLOCKED_USERIDS_CHATCOMPLETION,
   },
